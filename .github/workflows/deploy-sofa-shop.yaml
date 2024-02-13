@@ -17,6 +17,8 @@ jobs:
         with:
           node-version: 20
       - name: Save config to a file
-        run: printf '%s\n' "${{ github.event.inputs.config }}" > config.json
+        env:
+          JSON_CONFIG: ${{ github.event.inputs.config }}
+        run: printf '%s\n' "$JSON_DOC" > config.json
       - name: Print config
         run: cat config.json
