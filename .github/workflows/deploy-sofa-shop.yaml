@@ -20,5 +20,7 @@ jobs:
         env:
           CONFIG_JSON: ${{ github.event.inputs.config }}
         run: printf '%s\n' "$CONFIG_JSON" > config.json
-      - name: Print config
-        run: cat config.json
+      - name: Generate application
+        run: npx -y -p @shoptet/app-generator generate -c config.json -t app
+      - name: List
+        run: ls -la app
