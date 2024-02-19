@@ -2,6 +2,10 @@ name: Deploy SOFA shop to Cloudflare
 on:
   workflow_dispatch:
     inputs:
+      projectName:
+        description: 'Cloudflare project name'
+        required: true
+        type: string
       config:
         description: 'Config'
         required: true
@@ -20,7 +24,19 @@ jobs:
         env:
           CONFIG_JSON: ${{ github.event.inputs.config }}
         run: printf '%s\n' "$CONFIG_JSON" > config.json
-      - name: Generate application
+      - name: Generate
         run: npx -y -p @shoptet/app-generator generate -c config.json -t app
-      - name: List
-        run: ls -la app
+      - name: Build
+        run: npm run cf:build
+        working-directory: app
+      - name: Deploy
+        uses: cloudflare/wrangler-action@2.0.0
+        id: deployToCloudflare
+        with:
+          workingDirectory: app
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: c260d2c0af60518ce726f96876e1fa41 # sofacf@shoptet.cz
+          # wrangler doesn't support any parsable output, see https://github.com/cloudflare/wrangler2/issues/2437
+          command: pages publish --project-name ${{ github.event.inputs.projectName }} --branch master .vercel/output/static | tee >(cat 1>&2) | grep "Deployment complete! Take a peek over at" | grep -Eo 'https://[^ >]+' | xargs -I % echo "deploymentUrl=%" >> $GITHUB_OUTPUT
+      - name: Print the URL
+        run: 'echo URL: ${{ steps.deployToCloudflare.outputs.deploymentUrl }}'
