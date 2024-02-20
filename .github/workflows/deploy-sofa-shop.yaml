@@ -3,11 +3,11 @@ on:
   workflow_dispatch:
     inputs:
       projectName:
-        description: 'Cloudflare project name'
+        description: Cloudflare project name
         required: true
         type: string
       config:
-        description: 'Config'
+        description: Config
         required: true
         type: string
       deploymentInfoArtifactName:
@@ -50,3 +50,4 @@ jobs:
         with:
           name: ${{ github.event.inputs.deploymentInfoArtifactName }}
           path: output/deployment-info.json
+          retention-days: 1
