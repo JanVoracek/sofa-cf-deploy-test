@@ -10,6 +10,10 @@ on:
         description: 'Config'
         required: true
         type: string
+      deploymentInfoArtifactName:
+        description: Name of the artifact containing JSON with deployment info
+        required: true
+        type: string
 jobs:
   deploy-sofa-shop:
     name: Deploy
@@ -37,6 +41,12 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: c260d2c0af60518ce726f96876e1fa41 # sofacf@shoptet.cz
           # wrangler doesn't support any parsable output, see https://github.com/cloudflare/wrangler2/issues/2437
-          command: pages publish --project-name ${{ github.event.inputs.projectName }} --branch master .vercel/output/static | tee >(cat 1>&2) | grep "Deployment complete! Take a peek over at" | grep -Eo 'https://[^ >]+' | xargs -I % echo "deploymentUrl=%" >> $GITHUB_OUTPUT
-      - name: Print the URL
-        run: 'echo URL: ${{ steps.deployToCloudflare.outputs.deploymentUrl }}'
+          command: pages deploy --project-name ${{ github.event.inputs.projectName }} --branch master .vercel/output/static | tee >(cat 1>&2) | grep "Deployment complete! Take a peek over at" | grep -Eo 'https://[^ >]+' | xargs -I % echo "deploymentUrl=%" >> $GITHUB_OUTPUT
+      - name: Save URL to a file
+        run: |
+          mkdir output
+          jq --null-input --compact-output '{url: "${{ steps.deployToCloudflare.outputs.deploymentUrl }}"}' > output/deployment-info.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.deploymentInfoArtifactName }}
+          path: output/deployment-info.json
